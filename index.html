@@ -1,146 +1,3 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Rifa Online</title>
-<link rel="stylesheet" href="styles.css">
-<style>
-/* Tu CSS actual */
-body {
-  font-family: Arial, sans-serif;
-  background: #f2f2f2;
-  margin: 0;
-}
-
-header {
-  background: #222;
-  color: #fff;
-  padding: 15px;
-  text-align: center;
-}
-
-nav {
-  background: #333;
-  display: flex;
-  justify-content: center;
-}
-
-nav button {
-  background: none;
-  border: none;
-  color: #fff;
-  padding: 15px 20px;
-  cursor: pointer;
-  font-size: 16px;
-}
-
-nav button:hover {
-  background: #444;
-}
-
-section {
-  display: none;
-  padding: 20px;
-}
-
-section.active {
-  display: block;
-}
-
-.box {
-  background: #fff;
-  padding: 15px;
-  border-radius: 6px;
-  margin-bottom: 20px;
-}
-
-input, button {
-  padding: 8px;
-  margin: 5px 0;
-}
-
-.boleto {
-  display: inline-block;
-  width: 60px;
-  margin: 3px;
-  padding: 6px;
-  background: #ccc;
-  border-radius: 4px;
-  text-align: center;
-}
-
-.ocupado {
-  background: #e74c3c;
-  color: #fff;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th, td {
-  border: 1px solid #ccc;
-  padding: 6px;
-  text-align: center;
-}
-</style>
-</head>
-<body>
-
-<header>
-  <h1>🎟️ Rifa Online</h1>
-</header>
-
-<nav>
-  <button onclick="mostrar('registro')">Registro</button>
-  <button onclick="mostrar('boletos')">Boletos</button>
-  <button onclick="accesoAdmin()">Admin</button>
-</nav>
-
-<!-- REGISTRO -->
-<section id="registro" class="active">
-  <div class="box">
-    <h2>Registro de Boleto</h2>
-    <input id="nombre" placeholder="Nombre completo"><br>
-    <input id="telefono" placeholder="Teléfono"><br>
-    <input id="boleto" placeholder="Boleto (0001-10000)"><br>
-    <button onclick="registrar()">Registrar</button>
-    <p>⚠️ Se descargará el archivo actualizado. Reemplázalo en GitHub.</p>
-  </div>
-</section>
-
-<!-- BOLETOS -->
-<section id="boletos">
-  <div class="box">
-    <h2>Boletos Ocupados</h2>
-    <div id="listaBoletos"></div>
-  </div>
-</section>
-
-<!-- ADMIN -->
-<section id="admin">
-  <div class="box">
-    <h2>Panel Admin</h2>
-    <button onclick="sortear()">🎉 Sortear</button>
-    <h3 id="ganador"></h3>
-    <button onclick="exportar()">📤 Exportar Excel</button>
-  </div>
-
-  <div class="box">
-    <table>
-      <thead>
-        <tr>
-          <th>Boleto</th>
-          <th>Nombre</th>
-          <th>Teléfono</th>
-        </tr>
-      </thead>
-      <tbody id="tabla"></tbody>
-    </table>
-  </div>
-</section>
-
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 let datos = [];
@@ -154,16 +11,15 @@ function mostrar(id) {
   if (id === "admin") cargarAdmin();
 }
 
-// Cargar datos desde JSON
-async function cargarDatos() {
-  try {
-    const res = await fetch("boletos.json");
-    datos = await res.json();
-  } catch (e) {
-    datos = [];
+// Acceso Admin
+function accesoAdmin() {
+  const pass = prompt("Contraseña de administrador:");
+  if (pass === PASSWORD_ADMIN) {
+    mostrar('admin');
+  } else {
+    alert("Acceso denegado");
   }
 }
-cargarDatos();
 
 // Registrar boleto
 function registrar() {
@@ -192,7 +48,7 @@ function registrar() {
   alert("Registro hecho. Reemplaza el archivo en GitHub.");
 }
 
-// Cargar boletos ocupados
+// Cargar boletos
 function cargarBoletos() {
   const cont = document.getElementById("listaBoletos");
   cont.innerHTML = "";
@@ -207,7 +63,7 @@ function cargarBoletos() {
   }
 }
 
-// Cargar tabla de admin
+// Cargar tabla Admin
 function cargarAdmin() {
   const tabla = document.getElementById("tabla");
   tabla.innerHTML = "";
@@ -229,7 +85,7 @@ function sortear() {
     `🎉 Ganador: Boleto ${g.boleto} - ${g.nombre}`;
 }
 
-// Exportar a Excel
+// Exportar Excel
 function exportar() {
   const ws = XLSX.utils.json_to_sheet(datos);
   const wb = XLSX.utils.book_new();
@@ -237,16 +93,18 @@ function exportar() {
   XLSX.writeFile(wb, "rifa.xlsx");
 }
 
-// Acceso Admin
-function accesoAdmin() {
-  const pass = prompt("Contraseña de administrador:");
-  if (pass === PASSWORD_ADMIN) {
-    mostrar('admin');
-  } else {
-    alert("Acceso denegado");
+// Cargar datos iniciales
+async function cargarDatos() {
+  try {
+    const res = await fetch("boletos.json");
+    datos = await res.json();
+  } catch (e) {
+    datos = [];
   }
 }
+cargarDatos();
 </script>
 
 </body>
 </html>
+
