@@ -4,6 +4,87 @@
 <meta charset="UTF-8">
 <title>Rifa Online</title>
 <link rel="stylesheet" href="styles.css">
+<style>
+/* Tu CSS actual */
+body {
+  font-family: Arial, sans-serif;
+  background: #f2f2f2;
+  margin: 0;
+}
+
+header {
+  background: #222;
+  color: #fff;
+  padding: 15px;
+  text-align: center;
+}
+
+nav {
+  background: #333;
+  display: flex;
+  justify-content: center;
+}
+
+nav button {
+  background: none;
+  border: none;
+  color: #fff;
+  padding: 15px 20px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+nav button:hover {
+  background: #444;
+}
+
+section {
+  display: none;
+  padding: 20px;
+}
+
+section.active {
+  display: block;
+}
+
+.box {
+  background: #fff;
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+input, button {
+  padding: 8px;
+  margin: 5px 0;
+}
+
+.boleto {
+  display: inline-block;
+  width: 60px;
+  margin: 3px;
+  padding: 6px;
+  background: #ccc;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.ocupado {
+  background: #e74c3c;
+  color: #fff;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  border: 1px solid #ccc;
+  padding: 6px;
+  text-align: center;
+}
+</style>
 </head>
 <body>
 
@@ -38,4 +119,134 @@
 </section>
 
 <!-- ADMIN -->
-<section id="admin"
+<section id="admin">
+  <div class="box">
+    <h2>Panel Admin</h2>
+    <button onclick="sortear()">🎉 Sortear</button>
+    <h3 id="ganador"></h3>
+    <button onclick="exportar()">📤 Exportar Excel</button>
+  </div>
+
+  <div class="box">
+    <table>
+      <thead>
+        <tr>
+          <th>Boleto</th>
+          <th>Nombre</th>
+          <th>Teléfono</th>
+        </tr>
+      </thead>
+      <tbody id="tabla"></tbody>
+    </table>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+let datos = [];
+const PASSWORD_ADMIN = "rifa2025"; // Cambia la contraseña
+
+// Mostrar sección
+function mostrar(id) {
+  document.querySelectorAll("section").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  if (id === "boletos") cargarBoletos();
+  if (id === "admin") cargarAdmin();
+}
+
+// Cargar datos desde JSON
+async function cargarDatos() {
+  try {
+    const res = await fetch("boletos.json");
+    datos = await res.json();
+  } catch (e) {
+    datos = [];
+  }
+}
+cargarDatos();
+
+// Registrar boleto
+function registrar() {
+  const nombre = document.getElementById("nombre").value;
+  const telefono = document.getElementById("telefono").value;
+  const boleto = document.getElementById("boleto").value.padStart(4,"0");
+
+  if (!nombre || !telefono || boleto < "0001" || boleto > "10000") {
+    alert("Datos inválidos");
+    return;
+  }
+
+  if (datos.some(d => d.boleto === boleto)) {
+    alert("Boleto ocupado");
+    return;
+  }
+
+  datos.push({ boleto, nombre, telefono });
+
+  const blob = new Blob([JSON.stringify(datos,null,2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "boletos.json";
+  a.click();
+
+  alert("Registro hecho. Reemplaza el archivo en GitHub.");
+}
+
+// Cargar boletos ocupados
+function cargarBoletos() {
+  const cont = document.getElementById("listaBoletos");
+  cont.innerHTML = "";
+  const ocupados = datos.map(d => d.boleto);
+
+  for (let i = 1; i <= 10000; i++) {
+    const b = i.toString().padStart(4,"0");
+    const div = document.createElement("div");
+    div.className = "boleto" + (ocupados.includes(b) ? " ocupado" : "");
+    div.textContent = b;
+    cont.appendChild(div);
+  }
+}
+
+// Cargar tabla de admin
+function cargarAdmin() {
+  const tabla = document.getElementById("tabla");
+  tabla.innerHTML = "";
+  datos.forEach(d => {
+    tabla.innerHTML += `
+      <tr>
+        <td>${d.boleto}</td>
+        <td>${d.nombre}</td>
+        <td>${d.telefono}</td>
+      </tr>`;
+  });
+}
+
+// Sortear ganador
+function sortear() {
+  if (datos.length === 0) return alert("No hay boletos");
+  const g = datos[Math.floor(Math.random() * datos.length)];
+  document.getElementById("ganador").innerText =
+    `🎉 Ganador: Boleto ${g.boleto} - ${g.nombre}`;
+}
+
+// Exportar a Excel
+function exportar() {
+  const ws = XLSX.utils.json_to_sheet(datos);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Rifa");
+  XLSX.writeFile(wb, "rifa.xlsx");
+}
+
+// Acceso Admin
+function accesoAdmin() {
+  const pass = prompt("Contraseña de administrador:");
+  if (pass === PASSWORD_ADMIN) {
+    mostrar('admin');
+  } else {
+    alert("Acceso denegado");
+  }
+}
+</script>
+
+</body>
+</html>
