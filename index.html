@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Rifa Online</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <h1>🎟️ Rifa Online</h1>
+</header>
+
+<nav>
+  <button onclick="mostrar('registro')">Registro</button>
+  <button onclick="mostrar('boletos')">Boletos</button>
+  <button onclick="accesoAdmin()">Admin</button>
+</nav>
+
+<!-- REGISTRO -->
+<section id="registro" class="active">
+  <div class="box">
+    <h2>Registro de Boleto</h2>
+    <input id="nombre" placeholder="Nombre completo"><br>
+    <input id="telefono" placeholder="Teléfono"><br>
+    <input id="boleto" placeholder="Boleto (0001-10000)"><br>
+    <button onclick="registrar()">Registrar</button>
+    <p>⚠️ Se descargará el archivo actualizado. Reemplázalo en GitHub.</p>
+  </div>
+</section>
+
+<!-- BOLETOS -->
+<section id="boletos">
+  <div class="box">
+    <h2>Boletos Ocupados</h2>
+    <div id="listaBoletos"></div>
+  </div>
+</section>
+
+<!-- ADMIN -->
+<section id="admin">
+  <div class="box">
+    <h2>Panel Admin</h2>
+    <button onclick="sortear()">🎉 Sortear</button>
+    <h3 id="ganador"></h3>
+    <button onclick="exportar()">📤 Exportar Excel</button>
+  </div>
+
+  <div class="box">
+    <table>
+      <thead>
+        <tr>
+          <th>Boleto</th>
+          <th>Nombre</th>
+          <th>Teléfono</th>
+        </tr>
+      </thead>
+      <tbody id="tabla"></tbody>
+    </table>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+let datos = [];
+
+function mostrar(id) {
+  document.querySelectorAll("section").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  if (id === "boletos") cargarBoletos();
+  if (id === "admin") cargarAdmin();
+}
+
+async function cargarDatos() {
+  const res = await fetch("boletos.json");
+  datos = await res.json();
+}
+cargarDatos();
+
+async function registrar() {
+  const nombre = document.getElementById("nombre").value;
+  const telefono = document.getElementById("telefono").value;
+  const boleto = document.getElementById("boleto").value.padStart(4,"0");
+
+  if (!nombre || !telefono || boleto < "0001" || boleto > "10000") {
+    alert("Datos inválidos");
+    return;
+  }
+
+  if (datos.some(d => d.boleto === boleto)) {
+    alert("Boleto ocupado");
+    return;
+  }
+
+  datos.push({ boleto, nombre, telefono });
+
+  const blob = new Blob([JSON.stringify(datos,null,2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "boletos.json";
+  a.click();
+
+  alert("Registro hecho. Reemplaza el archivo en GitHub.");
+}
+
+function cargarBoletos() {
+  const cont = document.getElementById("listaBoletos");
+  cont.innerHTML = "";
+  const ocupados = datos.map(d => d.boleto);
+
+  for (let i = 1; i <= 10000; i++) {
+    const b = i.toString().padStart(4,"0");
+    const div = document.createElement("div");
+    div.className = "boleto" + (ocupados.includes(b) ? " ocupado" : "");
+    div.textContent = b;
+    cont.appendChild(div);
+  }
+}
+
+function cargarAdmin() {
+  const tabla = document.getElementById("tabla");
+  tabla.innerHTML = "";
+  datos.forEach(d => {
+    tabla.innerHTML += `
+      <tr>
+        <td>${d.boleto}</td>
+        <td>${d.nombre}</td>
+        <td>${d.telefono}</td>
+      </tr>`;
+  });
+}
+
+function sortear() {
+  if (datos.length === 0) return alert("No hay boletos");
+  const g = datos[Math.floor(Math.random() * datos.length)];
+  document.getElementById("ganador").innerText =
+    `🎉 Ganador: Boleto ${g.boleto} - ${g.nombre}`;
+}
+
+function exportar() {
+  const ws = XLSX.utils.json_to_sheet(datos);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Rifa");
+  XLSX.writeFile(wb, "rifa.xlsx");
+}
+</script>
+
+</body>
+</html>
